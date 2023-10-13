@@ -22,6 +22,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.document_loaders import UnstructedPDFLoader
 
 
 class Vicuna(LLM):
@@ -101,6 +102,37 @@ def start():
 
     print("all_faiss_index:", all_faiss_index)
     return all_faiss_index,llm
+
+
+
+def start_table():
+    
+    embeddings = HuggingFaceEmbeddings(model_name='/root/report_qa/huggingface/infgrad/stella-large-zh')
+    all_faiss_index_table={}
+    count=1
+    for i, dir_name in enumerate(os.listdir("./PDF/")):
+        temp={} 
+        for file_name in os.listdir("./PDF/"+dir_name+"/"):
+            print("正在emmending的文件序号：",count)
+            count+=1
+            path = "./PDF/" +dir_name+"/"+ file_name[:-4] + ".pdf"
+            loader = UnstructedPDFLoader(path, mode="elements")
+            documents = loader.load()
+
+            faiss_index = FAISS.from_documents(documents, embeddings)
+            if dir_name=="钻井地质设计报告":
+                temp[file_name.split('井')[0]+'井']=(faiss_index,file_name[:-4])
+            elif dir_name=="油田开发年报":
+                temp[file_name.split('年')[0]+'年'] = (faiss_index,file_name[:-4])
+            elif dir_name == "气田开发年报":
+                temp[file_name.split('年')[0] + '年'] = (faiss_index, file_name[:-4])
+
+        all_faiss_index_table[dir_name]=temp
+        
+    print("all_faiss_index_table:", all_faiss_index_table)
+    return all_faiss_index_table
+
+    
 
 
 # all_faiss_index,llm=start()
