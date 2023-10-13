@@ -5,6 +5,7 @@ import traceback
 from flask import Flask, jsonify,request,make_response
 from gevent import pywsgi
 from funcs.q2a import start
+from funcs.q2a import start_table
 import requests
 import json
 import config
@@ -16,6 +17,7 @@ app = Flask(__name__)
 app.config.from_object(config)
 
 all_faiss_index,llm=start()
+all_faiss_index_table=start_table()
 # print(all_faiss_index)
 
 @app.route('/api/v2/report_qa',methods=['post'])
@@ -34,7 +36,7 @@ def report_qa():
     out['data'] = {}
 
     out['data']['image'] = ""
-    out['data']['page'] = random.randint(1, 20)
+    out['data']['page'] = []
     out['data']["file"] = ""
 
     try:
@@ -51,7 +53,9 @@ def report_qa():
                 out['data']["answer"] = "知识库中没有您所提问年份的油田年报"
                 raise ValueError("知识库中没有您所提问年份的油田年报")
             faiss_index, result_source = all_faiss_index["油田开发年报"][query_content.split('年',1)[0]+'年']
+            faiss_index_table, result_source_table = all_faiss_index_table["油田开发年报"][query_content.split('年',1)[0]+'年']
             Q = query_content.split('年',1)[1]
+            
         elif query_class == "气田开发年报":
             if "年" not in query_content:
                 out['data']["answer"] = "对年报提问您应该明确是哪一年。例如2022年......."
@@ -60,16 +64,18 @@ def report_qa():
                 out['data']["answer"] = "知识库中没有您所提问年份的气田年报"
                 raise ValueError("知识库中没有您所提问年份的气田年报")
             faiss_index, result_source = all_faiss_index["气田开发年报"][query_content.split('年',1)[0]+'年']
+            faiss_index_table, result_source_table = all_faiss_index_table["气田开发年报"][query_content.split('年',1)[0]+'年']
             Q = query_content.split('年',1)[1]
+            
         elif query_class == "钻井地质设计报告":
             if "井" not in query_content:
                 out['data']["answer"] = "对钻井地质报告的提问您应该明确对哪一口井提问，例如乾11-34井......。"
-
                 raise ValueError("对钻井地质报告的提问您应该明确对哪一口井提问，例如乾11-34井......。")
             if query_content.split('井',1)[0]+'井' not in all_faiss_index[query_class]:
                 out['data']["answer"] = "知识库中没有您所提问的相关井号。"
                 raise ValueError("知识库中没有您所提问的相关井号。")
             faiss_index, result_source = all_faiss_index["钻井地质设计报告"][query_content.split('井',1)[0] + '井']
+            faiss_index_table, result_source_table = all_faiss_index_table["钻井地质设计报告"][query_content.split('井',1)[0] + '井']
             Q = query_content.split('井',1)[1]
         else:
             out['data']["answer"] = "您提问的类别目前不存在，现在可以提问的类别有气田开发年报、油田开发年报和钻井地质设计报告。"
@@ -77,6 +83,12 @@ def report_qa():
 
         print("问题：",Q)
         docs = faiss_index.similarity_search(Q, k=2)
+        docs_table = {}
+        for i in range(len(docs)):
+            docs_table[i] = faiss_index_table.similarity_search(docs[i], k=1)
+            out['data']['page'].append(docs_table[i][0].metadata["page_number"])
+        out['data']['page'] = list(set(out['data']['page']))
+            
         context=""
         for doc in docs:
             context += doc.page_content
@@ -93,6 +105,7 @@ def report_qa():
         out['queryStatus'] = 0
 
         print("output内容：", output)
+        print("output对应页码：", out['data']['page'])
 
     except Exception as e:
         out['error'] = traceback.format_exc()
