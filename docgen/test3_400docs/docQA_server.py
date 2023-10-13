@@ -85,7 +85,7 @@ def report_qa():
         docs = faiss_index.similarity_search(Q, k=2)
         docs_table = {}
         for i in range(len(docs)):
-            docs_table[i] = faiss_index_table.similarity_search(docs[i], k=1)
+            docs_table[i] = faiss_index_table.similarity_search(docs[i].page_content, k=1)
             out['data']['page'].append(docs_table[i][0].metadata["page_number"])
         out['data']['page'] = list(set(out['data']['page']))
             
