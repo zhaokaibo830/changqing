@@ -79,7 +79,7 @@ def report_qa():
             Q = query_content.split('井',1)[1]
         else:
             out['data']["answer"] = "您提问的类别目前不存在，现在可以提问的类别有气田开发年报、油田开发年报和钻井地质设计报告。"
-            raise ValueError("您提问的类别目前不存在，现在可以提问的类别有油田开发年报和钻井地质设计报告。")
+            raise ValueError("您提问的类别目前不存在，现在可以提问的类别有气田开发年报、油田开发年报和钻井地质设计报告。")
 
         print("问题：",Q)
         docs = faiss_index.similarity_search(Q, k=2)
