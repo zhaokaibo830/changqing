@@ -22,7 +22,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import UnstructedPDFLoader
+from langchain.document_loaders import UnstructuredPDFLoader
 
 
 class Vicuna(LLM):
@@ -116,7 +116,7 @@ def start_table():
             print("正在emmending的文件序号：",count)
             count+=1
             path = "./PDF/" +dir_name+"/"+ file_name[:-4] + ".pdf"
-            loader = UnstructedPDFLoader(path, mode="elements")
+            loader = UnstructuredPDFLoader(path, mode="elements")
             documents = loader.load()
 
             faiss_index = FAISS.from_documents(documents, embeddings)
